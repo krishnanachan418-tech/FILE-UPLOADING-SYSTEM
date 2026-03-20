@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode header {
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+        }
+
+        header h1 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 28px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark-mode .status-indicator {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.online {
+            background: #51cf66;
+        }
+
+        .status-dot.offline {
+            background: #ff6b6b;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .card {
+            background: #2a2a3e;
+            color: white;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 22px;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        body.dark-mode .upload-area {
+            background: #1a1a2e;
+            border-color: #764ba2;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        body.dark-mode .upload-area:hover {
+            background: #16213e;
+        }
+
+        .upload-area.dragging {
+            border-color: #764ba2;
+            background: #e8e9ff;
+        }
+
+        body.dark-mode .upload-area.dragging {
+            background: #2a2a3e;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            color: #999;
+        }
+
+        body.dark-mode .upload-hint {
+            color: #aaa;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        body.dark-mode .progress-bar {
+            background: #444;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        body.dark-mode .progress-text {
+            color: #aaa;
+        }
+
+        /* Files Grid */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .file-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        body.dark-mode .file-card {
+            background: #1a1a2e;
+            border-color: #444;
+        }
+
+        .file-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            font-size: 12px;
+            font-weight: 500;
+            word-break: break-all;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        body.dark-mode .file-name {
+            color: #fff;
+        }
+
+        .file-size {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+
+        body.dark-mode .file-size {
+            color: #aaa;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .file-btn {
+            flex: 1;
+            padding: 6px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .download-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: #764ba2;
+        }
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #ff5252;
+        }
+
+        .file-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Image Preview */
+        .image-preview-wrapper {
+            margin-top: 10px;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 120px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            max-width: 400px;
+            z-index: 1000;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            background: #51cf66;
+        }
+
+        .toast.error {
+            background: #ff6b6b;
+        }
+
+        .toast.info {
+            background: #667eea;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90vh;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 8px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+        }
+
+        /* Delete Confirmation */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-modal.active {
+            display: flex;
+        }
+
+        .confirm-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        body.dark-mode .confirm-box {
+            background: #2a2a3e;
+            color: white;
+        }
+
+        .confirm-box h3 {
+            margin-bottom: 15px;
+        }
+
+        .confirm-box p {
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        body.dark-mode .confirm-box p {
+            color: #aaa;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .confirm-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .confirm-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        body.dark-mode .confirm-cancel {
+            background: #444;
+            color: white;
+        }
+
+        .confirm-delete {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .confirm-delete:hover {
+            background: #ff5252;
+        }
+
+        /* Error Banner */
+        .error-banner {
+            background: #ffe0e0;
+            color: #c92a2a;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        body.dark-mode .error-banner {
+            background: #3e2626;
+            color: #ff8787;
+        }
+
+        .error-banner.active {
+            display: block;
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        body.dark-mode .empty-state {
+            color: #aaa;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .files-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <h1>
+            <span>📤</span>
+            <span>File Upload System</span>
+        </h1>
+        <div class="header-right">
+            <div class="status-indicator">
+                <div class="status-dot offline" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Error Banner -->
+        <div class="error-banner" id="errorBanner"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="card">
+                <h2>
+                    <span>📁</span>
+                    <span>Upload File</span>
+                </h2>
+                <div class="upload-area" id="uploadArea" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">Drag and drop your file</div>
+                    <div class="upload-hint">or click to select (JPG, PNG, PDF - Max 100MB)</div>
+                    <input type="file" id="fileInput" onchange="handleFileSelect(event)" accept=".jpg,.jpeg,.png,.pdf">
+                </div>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+            </div>
+
+            <!-- Files Section -->
+            <div class="card">
+                <h2>
+                    <span>📚</span>
+                    <span>My Files</span>
+                </h2>
+                <div class="files-grid" id="filesGrid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>No files uploaded yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div class="modal" id="imageModal" onclick="closeImageModal(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeImageModal()">✕</button>
+            <img id="previewImage" class="modal-image" alt="Preview">
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="confirm-modal" id="confirmModal" onclick="closeConfirmModal(event)">
+        <div class="confirm-box" onclick="event.stopPropagation()">
+            <h3>Delete File?</h3>
+            <p id="confirmFileName"></p>
+            <div class="confirm-buttons">
+                <button class="confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="confirm-delete" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION & INITIALIZATION
+        // ============================================
+
+        // Dynamic API URL detection
+        function getApiUrl() {
+          const hostname = window.location.hostname;
+          const port = 5000;
+
+          // Force loopback to avoid localhost resolution issues
+          if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
+            return `http://127.0.0.1:${port}/api`;
+          }
+
+          if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+            return `http://${hostname}:${port}/api`;
+          }
+
+          return `http://${hostname}:${port}/api`;
+        }
+        
+        const API_URL = getApiUrl();
+        console.log('🔗 API URL:', API_URL);
+        
+        let fileToDelete = null;
+        let serverOnline = false;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Page loaded, starting initialization...');
+            checkBackendConnection();
+            loadFiles();
+            
+            // Load theme preference
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+            
+            // Check connection every 30 seconds
+            setInterval(checkBackendConnection, 30000);
+        });
+
+        // ============================================
+        // BACKEND CONNECTION
+        // ============================================
+
+        async function checkBackendConnection() {
+          try {
+            console.log('🔍 Checking backend connection...');
+            const response = await fetch(`${API_URL}/health`, {
+              method: 'GET',
+              timeout: 5000
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log('✅ Backend is online:', data);
+              setOnlineStatus(true);
+              hideError();
+            } else {
+              throw new Error(`Backend returned status ${response.status}`);
+            }
+          } catch (err) {
+            console.error('❌ Backend connection failed:', err);
+            setOnlineStatus(false);
+          }
+        }
+
+        function setOnlineStatus(online) {
+          serverOnline = online;
+          const statusDot = document.getElementById('statusDot');
+          const statusText = document.getElementById('statusText');
+          
+          if (online) {
+            statusDot.classList.remove('offline');
+            statusDot.classList.add('online');
+            statusText.textContent = 'Connected';
+            console.log('✅ Status: Online');
+          } else {
+            statusDot.classList.remove('online');
+            statusDot.classList.add('offline');
+            statusText.textContent = 'Offline';
+            console.log('❌ Status: Offline');
+          }
+        }
+
+        // ============================================
+        // UPLOAD HANDLING
+        // ============================================
+
+        document.getElementById('uploadArea').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('uploadArea').classList.add('dragging');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('uploadArea').classList.remove('dragging');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('uploadArea').classList.remove('dragging');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const xhr = new XMLHttpRequest();
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            progressContainer.classList.add('active');
+            hideError();
+            
+            console.log(`📤 Uploading file: ${file.name} (${formatFileSize(file.size)})`);
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressFill.style.width = percentComplete + '%';
+                    progressText.textContent = Math.round(percentComplete) + '%';
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                progressContainer.classList.remove('active');
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            console.log('✅ Upload successful:', response.file);
+                            showToast('✅ ' + (response.message || 'File uploaded successfully!'), 'success');
+                            loadFiles();
+                            document.getElementById('fileInput').value = '';
+                        } else {
+                            console.error('❌ Upload failed:', response.message);
+                            showError('❌ ' + (response.message || 'Upload failed'));
+                        }
+                    } catch (error) {
+                        console.error('❌ Invalid response:', error);
+                        showError('❌ Invalid response from server');
+                    }
+                } else if (xhr.status >= 400) {
+                    try {
+                        const error = JSON.parse(xhr.responseText);
+                        console.error('❌ Upload error:', error.message);
+                        showError('❌ ' + (error.message || 'Upload failed'));
+                    } catch {
+                        console.error('❌ Upload failed:', xhr.statusText);
+                        showError('❌ Upload failed - ' + xhr.status + ' ' + xhr.statusText);
+                    }
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                progressContainer.classList.remove('active');
+                console.error('❌ Network error during upload');
+                showError('❌ Network error - Cannot reach backend at ' + API_URL);
+            });
+
+            xhr.addEventListener('abort', () => {
+                progressContainer.classList.remove('active');
+                console.warn('⚠️ Upload cancelled');
+                showError('❌ Upload cancelled');
+            });
+
+            xhr.open('POST', `${API_URL}/upload`);
+            xhr.send(formData);
+        }
+
+        // ============================================
+        // FILE MANAGEMENT
+        // ============================================
+
+        function loadFiles() {
+            console.log('📂 Loading files...');
+            fetch(`${API_URL}/files`)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    const grid = document.getElementById('filesGrid');
+                    if (data.files && data.files.length > 0) {
+                        console.log(`✅ Loaded ${data.files.length} files`);
+                        grid.innerHTML = data.files.map(file => createFileCard(file)).join('');
+                    } else {
+                        console.log('📭 No files found');
+                        grid.innerHTML = `
+                            <div class="empty-state" style="grid-column: 1/-1;">
+                                <div class="empty-state-icon">📭</div>
+                                <p>No files uploaded yet</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Error loading files:', err);
+                    showError('❌ Failed to load files - Backend may be offline');
+                });
+        }
+
+        function createFileCard(file) {
+            const icon = getFileIcon(file.type);
+            const isImage = ['jpg', 'jpeg', 'png'].includes(file.type.toLowerCase());
+            const imagePreview = isImage ? `
+                <div class="image-preview-wrapper">
+                    <img src="http://${window.location.hostname}:5000${file.url}" 
+                         class="image-preview" 
+                         onclick="openImageModal('http://${window.location.hostname}:5000${file.url}')" 
+                         alt="${file.originalName}"
+                         onerror="console.error('Image failed to load:', this.src)">
+                </div>
+            ` : '';
+
+            return `
+                <div class="file-card">
+                    <div class="file-icon">${icon}</div>
+                    ${imagePreview}
+                    <div class="file-name" title="${file.originalName}">${file.originalName}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                    <div class="file-actions">
+                        <button class="file-btn download-btn" onclick="downloadFile('http://${window.location.hostname}:5000${file.url}', '${file.originalName}')">⬇️</button>
+                        <button class="file-btn delete-btn" onclick="openDeleteConfirm('${file.filename}', '${file.originalName}')">🗑️</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getFileIcon(type) {
+            const icons = {
+                pdf: '📄',
+                jpg: '🖼️',
+                jpeg: '🖼️',
+                png: '🖼️',
+                doc: '📑',
+                docx: '📑',
+                txt: '📝'
+            };
+            return icons[type?.toLowerCase()] || '📎';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function downloadFile(url, filename) {
+            console.log('📥 Downloading:', filename);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function deleteFile(filename) {
+            console.log('🗑️ Deleting:', filename);
+            fetch(`${API_URL}/files/${filename}`, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('✅ File deleted');
+                        showToast('✅ File deleted successfully!', 'success');
+                        loadFiles();
+                    } else {
+                        console.error('❌ Delete failed:', data.message);
+                        showError('❌ ' + (data.message || 'Delete failed'));
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Delete error:', err);
+                    showError('❌ Failed to delete file');
+                });
+        }
+
+        // ============================================
+        // MODALS
+        // ============================================
+
+        function openImageModal(src) {
+            document.getElementById('previewImage').src = src;
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        function closeImageModal(event) {
+            if (!event || event.target.id === 'imageModal') {
+                document.getElementById('imageModal').classList.remove('active');
+            }
+        }
+
+        function openDeleteConfirm(filename, originalName) {
+            fileToDelete = filename;
+            document.getElementById('confirmFileName').textContent = `Are you sure you want to delete "${originalName}"? This action cannot be undone.`;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal(event) {
+            if (!event || event.target.id === 'confirmModal') {
+                document.getElementById('confirmModal').classList.remove('active');
+                fileToDelete = null;
+            }
+        }
+
+        function confirmDelete() {
+            if (fileToDelete) {
+                deleteFile(fileToDelete);
+                closeConfirmModal();
+            }
+        }
+
+        // ============================================
+        // UI HELPERS
+        // ============================================
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            console.log('🌙 Theme toggled:', isDark ? 'dark' : 'light');
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function showError(message) {
+            const banner = document.getElementById('errorBanner');
+            banner.textContent = message;
+            banner.classList.add('active');
+            console.error('Error banner:', message);
+        }
+
+        function hideError() {
+            document.getElementById('errorBanner').classList.remove('active');
+        }
+
+        console.log('✅ File Upload System initialized');
+    </script>
+</body>
+</html>
